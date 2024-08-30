@@ -7,8 +7,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.swing.text.html.Option;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 public class TodoController {
@@ -16,7 +18,7 @@ public class TodoController {
     @Autowired
     TodoRepo todoRepo;
 
-    @GetMapping("/todosList")
+    @GetMapping("/taskList")
     public ResponseEntity<List<ToDoItem>> getTodoList(){
         try {
             ArrayList<ToDoItem> item = new ArrayList<>();
@@ -35,6 +37,21 @@ public class TodoController {
 
     }
 
+    @GetMapping("/taskId/{id}")
+    public ResponseEntity<ToDoItem> getTodoItem(@PathVariable long id){
+        try {
+            Optional<ToDoItem> item = todoRepo.findById(id);
+            if(item.isPresent()){
+                return new ResponseEntity<>(item.get(), HttpStatus.OK);
+            }else{
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+
+        }catch (Exception e){
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @PostMapping("/addTask")
     public ResponseEntity<ToDoItem> addTask(@RequestBody ToDoItem item){
         try {
@@ -47,11 +64,32 @@ public class TodoController {
 
 
 
-    @DeleteMapping("/deleteItem/{id}")
+    @DeleteMapping("/deleteTask/{id}")
     public ResponseEntity<ToDoItem> deleteItem(@PathVariable long id){
         try{
             todoRepo.deleteById(id);
             return new ResponseEntity<>(HttpStatus.OK);
+        }catch (Exception e){
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PutMapping("/updateTask/{id}")
+    public  ResponseEntity<ToDoItem> updateItem(@PathVariable long id, @RequestBody ToDoItem item){
+        try {
+            Optional<ToDoItem> oldItem = todoRepo.findById(id);
+            if(oldItem.isPresent()){
+                ToDoItem updateItemData = oldItem.get();
+                updateItemData.setTitle(item.getTitle());
+                updateItemData.setStatus(item.getStatus());
+                updateItemData.setDateTime(item.getDateTime());
+
+                ToDoItem toDoItemObj = todoRepo.save(updateItemData);
+                return new ResponseEntity<>(updateItemData, HttpStatus.OK);
+            }else {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+
         }catch (Exception e){
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
